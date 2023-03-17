@@ -1,0 +1,8 @@
+.topBar {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+}
+.inputContent {
+    width: 250px;
+}
