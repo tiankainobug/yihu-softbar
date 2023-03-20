@@ -7,7 +7,7 @@ class Calls {
         this.callsList = []
     }
     get(callId){
-        return this.callsList.find(item => item.callId = callId)
+        return this.callsList.find(item => item.callId === callId)
     }
     add(call){
         if (call.callId) {
@@ -67,7 +67,7 @@ class Calls {
             for (let key in call) {
                 if (typeof this.callsList[i][key] === typeof undefined || this.callsList[i][key] !== call[key]) continue callsLoop;
             }
-            calls.callsList.push(this[i]);
+            calls.callsList.push(this.callsList[i]);
         }
         return calls;
     };

@@ -35,7 +35,7 @@ function Error(error, args){
         if (!args) {
             newError = Object.create(error);
             for (let name in newError) {
-                newError[name] = $.format(newError[name], args);
+                newError[name] = format(newError[name], args);
             }
         } else {
             newError = error;

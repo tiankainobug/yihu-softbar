@@ -1,5 +1,34 @@
+const format = function (template, args) {
+    if (arguments.length > 1 && typeof arguments[0] === "string") {
+        let result = arguments[0];
+        let reg;
+        if (arguments.length === 2 && typeof arguments[1] === "object") {
+            let obj = arguments[1];
+            for (let key in obj) {
+                if (!obj[key]) {
+                    reg = new RegExp("({" + key + "})", "g");
+                    result = result.replace(reg, obj[key]);
+                }
+            }
+        } else {
+            for (let i = 1, len = arguments.length; i < len; i++) {
+                if (!arguments[i]) {
+                    // 这个在索引大于9时会有问题
+                    // let reg = new RegExp("({[" + (i - 1) + "]})", "g");
+                    reg = new RegExp("({)" + (i - 1) + "(})", "g");
+                    result = result.replace(reg, arguments[i]);
+                }
+            }
+        }
+        return result;
+    } else {
+        return arguments[0];
+    }
+};
 // 会议标识
 let conferenceTag = false;
+// 操作标识
+let op_type;
 
 const dateDiff = function (startTime, EndTime) {
     if (!EndTime) {
@@ -68,6 +97,7 @@ const initButtonState = function () {
     vm.buttonInfo.ssc_btn = false;
     vm.buttonInfo.consult_btn = false;
     vm.buttonInfo.conference_btn = false;
+    vm.buttonInfo.sendDTMF_btn = false;
     vm.buttonInfo.transfer_btn = false;
     vm.buttonInfo.alternate_btn = false;
     vm.buttonInfo.sst_btn = false;
@@ -96,6 +126,8 @@ const checkButton = function(e) {
         initButtonState();
         return;
     }
+    // 可否发送DTMF
+    vm.buttonInfo.sendDTMF_btn = vm.isLogin;
     // 可否外拨
     vm.buttonInfo.makeCall_btn = !(that.calls.callsList.length >= 1)
     // 可否接听
@@ -146,222 +178,36 @@ const checkButton = function(e) {
     vm.buttonInfo.validatePwd_btn = activeCall && activeCall?.state === CallStateType.CONNECTED && that.calls.callsList.length !== 2 && !conferenceTag
 }
 
-const eventInit = function (event) {
-    /**
-     * 监听座席状态改变事件
-     */
-    event.on("AgentStateChangeEvt", function (e) {
-        calcDuration.restart();
-        checkButton(e);
+// 初始化状态选择下拉框
+const initReasonButton = () => {
+    vm.reasonInfo.options = [];
+    vm.reasonInfo.label = '';
+    vm.reasonInfo.placeholder = '未登录';
+    vm.reasonInfo.buttonType = 'primary';
+}
+
+const consult = dest => {
+    vm.station.consultation(dest, {
+        type: 'consultation'
+    }).then(function (e) {
+        console.info('磋商');
+    }).catch(e => {
+        this.$message.error(e.message)
     });
+}
 
-    /**
-     * 监听呼叫状态改变事件
-     */
-    event.on("StationStateChangeEvt", function (e) {
-        calcDuration.restart();
-        checkButton(e);
+const singleStepTransfer = dest => {
+    vm.station.singleStepTransfer(dest).then(function (e) {
+        console.info('单转');
+    }).catch(e => {
+        this.$message.error(e.message)
     });
+}
 
-    /**
-     * 监听登录事件
-     */
-    event.on("AgentLoggedOnEvt", function (e) {
-        const reasons = JSON.parse(vm.session.reasons);
-        vm.reasonInfo.options.push({label:'准备',value:0})
-        if (reasons instanceof Array){
-            reasons.map(item => {
-                vm.reasonInfo.options.push({label:item.codename,value:item.code})
-            })
-        }
-        vm.loginDialogVisible = false
-        vm.$message.success('登录成功!')
-        vm.reasonInfo.placeholder = '未就绪'
-        vm.reasonInfo.buttonType = 'warning'
-    });
-
-    /**
-     * 监听就绪事件
-     */
-    event.on("AgentReadyEvt", function (e) {
-        $('#readybtn').addClass("invisable");
-        $('#agent-state-btn').addClass("btn-success");
-        $('#agent-state-btn').removeClass("btn-warning");
-        $('#agentstate').html("就绪");
-        $('#callnum').val('');
-    });
-
-    /**
-     * 监听离席事件
-     */
-    event.on("AgentNotReadyEvt", function (e) {
-        $('#readybtn').removeClass("invisable");
-        $('#agent-state-btn').removeClass("btn-success");
-        $('#agent-state-btn').addClass("btn-warning");
-        $('#agentstate').html(lastReasonCodeName);
-    });
-
-    /**
-     * 监听后处理事件
-     */
-    event.on("AgentWorkingAfterCallEvt", function (e) {
-        $('#readybtn').removeClass("invisable");
-        $('#agent-state-btn').removeClass("btn-success");
-        $('#agent-state-btn').addClass("btn-warning");
-        $('#agentstate').html("话后处理");
-    });
-
-    /**
-     * 监听退出事件
-     */
-    event.on("AgentLoggedOffEvt", function (e) {
-        calcDuration.restart();
-        $('#agentstate').html("未登录");
-        $('#stationnum').html("");
-        $('#agentnum').html("未登录");
-        $("#domainS").html("");
-        $("#sname").html("");
-        resetReadyBtn();
-    });
-
-    /**
-     * 监听排队事件
-     */
-    event.on("QueueCallChangeEvt", function (e) {
-        vm.station.queueMap.forEach((key,value) => {
-            vm.queueInfo.push({queueNum:value,level:key})
-        });
-    });
-
-    /**
-     * 监听拨号事件
-     */
-    event.on("OriginatedEvt", function (e) {
-        $('#agentstate').html("拨号");
-        $('#incalltime').html("");
-    });
-
-    /**
-     * 监听振铃事件
-     */
-    event.on("DeliveredEvt", function (e) {
-        if (station.calls.length === 1) {
-            let ringingCall = station.calls.filter({
-                state: CallStateType.RINGING
-            }).getLast();
-            // 呼入
-            if (ringingCall && CallStateType.RINGING === ringingCall.state) {
-                $("#customernum").html(ringingCall.caller);
-                $('#agentstate').html("振铃");
-                MessageBox('客户号码: ' + ringingCall.caller);
-            } else {
-                // 座席呼出
-                $('#customernum').html(e.calledDevice);
-                $('#agentstate').html("回铃");
-            }
-        }
-    });
-
-    /**
-     * 监听接通事件
-     */
-    event.on("EstablishedEvt", function (e) {
-        if (conferenceTag) {
-            conferenceTag = false;
-        }
-        $('#agentstate').html("已接通");
-        $('#incalltime').html("");
-    });
-
-    /**
-     * 监听挂断事件
-     */
-    event.on("ConnectionClearedEvt", function (e) {
-        if (conferenceTag) {
-            conferenceTag = false;
-        }
-        if (station.calls.length === 0) {
-            $('#agentstate').html("已挂断");
-            $('#incalltime').html("");
-        }
-    });
-
-    /**
-     * 监听 验密事件
-     */
-    event.on("ValidatePwdEvt", function (e) {
-        console.log(station.calls)
-        if (station.validate === 'access') {
-            MessageBox('验密结果 : 密码正确');
-        } else {
-            MessageBox('验密结果 : 密码错误');
-        }
-
-    })
-
-    /**
-     * 监听保持事件
-     */
-    event.on("HeldEvt", function (e) {
-        $('#agentstate').html("保持");
-        $('#incalltime').html("");
-    });
-
-    /**
-     * 监听取回事件
-     */
-    event.on("RetrievedEvt", function (e) {
-        if (conferenceTag) {
-            $('#agentstate').html("会议中");
-            $('#incalltime').html("");
-        } else {
-            $('#agentstate').html("已接通");
-            $('#incalltime').html("");
-        }
-    });
-
-    /**
-     * 监听会议事件
-     */
-    event.on("ConferencedEvt", function (e) {
-        conferenceTag = true;
-        $('#agentstate').html("会议中");
-        $('#incalltime').html("");
-    });
-
-    /**
-     * 监听转移事件
-     */
-    event.on("TransferedEvt", function (e) {
-        if (station.calls.length === 0) {
-            $('#agentstate').html("已转移");
-            $('#incalltime').html("");
-        } else {
-            $('#agentstate').html("已接通");
-            $('#incalltime').html("");
-        }
-    });
-
-    /**
-     * 监听异常响应
-     */
-    event.on('Error', function (e) {
-        let err_str = e.errMsg;
-        if (err_str.indexOf(" get agent not exist fail !") > 0) {
-            MessageBox('用户名不存在，' + err_str);
-        } else if (err_str.indexOf(" station not exist !") > 0) {
-            MessageBox('分机号不存在，' + err_str);
-        } else if (err_str.indexOf(" agent password error !") > 0) {
-            MessageBox('密码错误，请重新输入密码，' + err_str);
-        } else if (err_str.indexOf(" not registered !") > 0) {
-            MessageBox('分机未注册，' + err_str);
-        } else if (err_str.indexOf(" already used by ") > 0) {
-            MessageBox('分机被使用，' + err_str);
-        } else if (err_str == "设置座席状态失败") {
-            MessageBox('当前坐席繁忙，请稍后重试，');
-        } else {
-            MessageBox('登录失败，请检查坐席号、密码、分机状态是否正常，' + err_str);
-        }
-        checkButton(e);
+const singleStepConference = dest => {
+    vm.station.singleStepConference(dest).then(function (e) {
+        console.info('单步会议');
+    }).catch(e => {
+        this.$message.error(e.message)
     });
 }

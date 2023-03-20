@@ -18,7 +18,7 @@
         <h1>翼呼软电话</h1>
         <el-dropdown  @command="changeReason">
             <el-button :type="reasonInfo.buttonType" style="width: 200px">
-                {{`${reasonInfo.label || reasonInfo.placeholder} || 时间`}}
+                {{`${reasonInfo.label || reasonInfo.placeholder} | ${reasonInfo.callNumber} | ${reasonInfo.duration}`}}
                 <i class="el-icon-arrow-down el-icon--right"></i>
             </el-button>
             <el-dropdown-menu slot="dropdown" style="width: 200px">
@@ -28,30 +28,30 @@
                 </el-dropdown-item>
             </el-dropdown-menu>
         </el-dropdown>
-        <el-input type="text" v-model="number" style="width: 100px" placeholder="外拨号码"></el-input>
+        <el-input type="text" v-model="callNumber" style="width: 100px" placeholder="外拨号码"></el-input>
         <el-button id="login_btn" type="success" @click="showLogin" v-if="buttonInfo.login_btn">登录</el-button>
-        <el-button id="makeCall_btn" type="success" v-if="buttonInfo.makeCall_btn">外呼</el-button>
-        <el-button id="hangup_btn" type="success" v-if="buttonInfo.hangup_btn">挂断</el-button>
-        <el-button id="answer_btn" type="success" v-if="buttonInfo.answer_btn">接听</el-button>
+        <el-button id="makeCall_btn" type="success" @click="makeCall" v-if="buttonInfo.makeCall_btn">外呼</el-button>
+        <el-button id="hangup_btn" type="success" @click="hangUp" v-if="buttonInfo.hangup_btn">挂断</el-button>
+        <el-button id="answer_btn" type="success" @click="answer" v-if="buttonInfo.answer_btn">接听</el-button>
         <el-button id="consult_btn" type="success" v-if="buttonInfo.consult_btn">咨询</el-button>
-        <el-button id="hold_btn" type="success" v-if="buttonInfo.hold_btn">保持</el-button>
-        <el-button id="retrieve_btn" type="success" v-if="buttonInfo.retrieve_btn">取回</el-button>
+        <el-button id="hold_btn" type="success" @click="hold" v-if="buttonInfo.hold_btn">保持</el-button>
+        <el-button id="retrieve_btn" type="success" @click="retrieve" v-if="buttonInfo.retrieve_btn">取回</el-button>
         <el-button id="ssc_btn" type="success" v-if="buttonInfo.ssc_btn">会议</el-button>
-        <el-button id="sst_btn" type="success" v-if="buttonInfo.sst_btn">转移</el-button>
+        <el-button id="sst_btn" type="success" @click="sst" v-if="buttonInfo.sst_btn">转移</el-button>
         <el-button id="alternate_btn" type="success" v-if="buttonInfo.alternate_btn">切换</el-button>
         <el-button id="transfer_btn" type="success" v-if="buttonInfo.transfer_btn">转移</el-button>
         <el-button id="reconnect_btn" type="success" v-if="buttonInfo.reconnect_btn">重连</el-button>
         <el-button id="conference_btn" type="success" v-if="buttonInfo.conference_btn">会议</el-button>
-        <el-button id="sendDTMF_btn" type="success" v-if="buttonInfo.sendDTMF_btn">发送DTMF</el-button>
+        <el-button id="sendDTMF_btn" type="success" @click="sendDTMF" v-if="buttonInfo.sendDTMF_btn">发送DTMF</el-button>
         <el-button id="validatePwd_btn" type="success" v-if="buttonInfo.validatePwd_btn">验密</el-button>
-        <div>{{`${station?.stationId || '坐席号'} : ${station?.domain || '域名'}`}}</div>
-        <el-dropdown>
+        <div>{{`${ isLogin ? station?.stationId : '坐席号' } : ${ isLogin ? station?.domain : '域名' }`}}</div>
+        <el-dropdown @command="signOut">
             <el-button type="primary">
-                {{station?.agent?.agentId || '未登录'}}
+                {{ isLogin ? station?.agent?.agentId : '未登录' }}
                 <i class="el-icon-arrow-down el-icon--right"></i>
             </el-button>
             <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item>登出</el-dropdown-item>
+                <el-dropdown-item command="signOut">登出</el-dropdown-item>
             </el-dropdown-menu>
         </el-dropdown>
     </el-header>
@@ -69,7 +69,7 @@
         width="550px"
         :before-close="cancelLogin"
     >
-        <el-form :model="loginForm" ref="loginForm" label-width="150px">
+        <el-form :model="loginForm" ref="loginForm" label-width="150px" :rules="loginFormRules">
             <el-form-item label="域名" prop="domain">
                 <el-input v-model="loginForm.domain" class="inputContent"></el-input>
             </el-form-item>
@@ -88,6 +88,24 @@
             <el-button type="primary" @click="login">登 录</el-button>
         </span>
     </el-dialog>
+
+    <!-- 转移通话弹框 -->
+    <el-dialog
+            title="请输入号码"
+            :visible.sync="transferDialogVisible"
+            width="550px"
+            :before-close="cancelTransfer"
+    >
+        <el-form :model="transferForm" ref="transferForm" label-width="150px" :rules="transferFormRules">
+            <el-form-item label="号码" prop="transferNum">
+                <el-input v-model="transferForm.transferNum" class="inputContent"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="cancelTransfer">取 消</el-button>
+            <el-button type="primary" @click="transfer">转 移 </el-button>
+        </span>
+    </el-dialog>
 </div>
 </body>
 <script src="./config/config.js" type="text/javascript"></script>
@@ -97,6 +115,7 @@
 <script src="./utils/class/Log.js" type="text/javascript"></script>
 <script src="./utils/funList.js" type="text/javascript"></script>
 <script src="./utils/typeList.js" type="text/javascript"></script>
+<script src="./utils/event.js" type="text/javascript"></script>
 
 <script src="./utils/class/Call.js" type="text/javascript"></script>
 <script src="./utils/class/Calls.js" type="text/javascript"></script>

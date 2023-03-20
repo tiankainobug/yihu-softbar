@@ -124,7 +124,7 @@ class Station {
                 });
                 if (that.calls.consultationTo === e.alertingDevice) {
                     that.calls.consultationTo = e.callId;
-                } else if (that.calls.length === 2 && that.calls.consultationFrom) {
+                } else if (that.calls.callsList.length === 2 && that.calls.consultationFrom) {
                     that.calls.consultationTo = e.callId;
                 }
                 Log.info("Delivered - 到达");
@@ -174,7 +174,7 @@ class Station {
                     that.calls.activeCall = activeCall.callId;
                 }
                 event.trigger("CallEnd", {});
-            } else if ("Fail" == e.connectionState) {
+            } else if ("Fail" === e.connectionState) {
                 // to do nothing
             }
             Log.info("ConnectionCleared - 挂断");
@@ -207,7 +207,7 @@ class Station {
                     callId: e.callId,
                     isHeld: false
                 });
-                if (that.calls.length) {
+                if (that.calls.callsList.length) {
                     that.calls.activeCall = e.callId;
                 }
                 Log.info("Retrieved - 恢复");
@@ -246,7 +246,7 @@ class Station {
                 that.calls.clearConsultation();
             }
             // 自己是转移方
-            if (e.transferringDevice === that.stationId && e.transferringDevice != e.transferredToDevice) {
+            if (e.transferringDevice === that.stationId && e.transferringDevice !== e.transferredToDevice) {
                 that.calls.activeCall = "";
                 that.calls.remove(e.primaryOldCall);
                 that.calls.remove(e.secondaryOldCall);
@@ -369,7 +369,7 @@ class Station {
         Log.info("station - makeCall");
         let that = this;
         // 有电话并且不是摘机状态返回
-        if (that.calls.length > 2 || that.calls.length === 1) return Promise.reject(new Error(Error.INVALID_STATE_ERR));
+        if (that.calls.callsList.length > 2 || that.calls.callsList.length === 1) return Promise.reject(new Error(Error.INVALID_STATE_ERR));
         options = options || support;
         // 外拨
         return that.session.socket.send({
@@ -418,13 +418,14 @@ class Station {
         let that = this;
         let heldCall = that.calls.filter({
             isHeld: true
-        }).getLast(), initiatedCall = that.calls.filter({
+        }).getLast();
+        let initiatedCall = that.calls.filter({
             state: CallStateType.OFF_HOOK
         }).getLast();
         // 电话全是振铃状态则返回
-        if (!that.calls.length || that.calls.filter({
+        if (!that.calls.callsList.length || that.calls.filter({
             state: CallStateType.RINGING
-        }).length === that.calls.length) return Promise.reject(new Error(Error.INVALID_STATE_ERR));
+        }).callsList.length === that.calls.callsList.length) return Promise.reject(new Error(Error.INVALID_STATE_ERR));
         // 有激活的或摘机的先挂
         let activeCall = that.calls.get(that.calls.activeCall);
         if (activeCall || initiatedCall) {
@@ -547,7 +548,7 @@ class Station {
         let heldCall = that.calls.filter({
             isHeld: true
         }).getLast();
-        if (!that.calls.length || activeCall && CallStateType.CONNECTED !== activeCall.state || !activeCall && !heldCall || heldCall && heldCall.state !== CallStateType.CONNECTED) return Promise.reject(new Error(Error.INVALID_STATE_ERR));
+        if (!that.calls.callsList.length || activeCall && CallStateType.CONNECTED !== activeCall.state || !activeCall && !heldCall || heldCall && heldCall.state !== CallStateType.CONNECTED) return Promise.reject(new Error(Error.INVALID_STATE_ERR));
         // 没有已激活的或者已激活的不是通话状态 或者 没有保持的或者保持的不是通话状态 问题场景屏蔽
         let existingCall = activeCall || heldCall;
         // 发送消息
