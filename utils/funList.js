@@ -25,11 +25,6 @@ const format = function (template, args) {
         return arguments[0];
     }
 };
-// 会议标识
-let conferenceTag = false;
-// 操作标识
-let op_type;
-
 const dateDiff = function (startTime, EndTime) {
     if (!EndTime) {
         EndTime = Date.now();
@@ -53,7 +48,6 @@ const dateDiff = function (startTime, EndTime) {
     res.MS = restTime;
     return res;
 }
-
 // 计算状态时长
 const calcDuration = function () {
     let calcTimer = 0;
@@ -85,7 +79,6 @@ const calcDuration = function () {
         }
     };
 }();
-
 const initButtonState = function () {
     vm.buttonInfo.login_btn = true;
     vm.buttonInfo.answer_btn = false;
@@ -105,7 +98,6 @@ const initButtonState = function () {
     vm.buttonInfo.reconnect_btn = false;
     vm.buttonInfo.validatePwd_btn = false;
 }
-
 const checkButton = function(e) {
     if (!e) {
         initButtonState();
@@ -177,7 +169,6 @@ const checkButton = function(e) {
     // 可否验密
     vm.buttonInfo.validatePwd_btn = activeCall && activeCall?.state === CallStateType.CONNECTED && that.calls.callsList.length !== 2 && !conferenceTag
 }
-
 // 初始化状态选择下拉框
 const initReasonButton = () => {
     vm.reasonInfo.options = [];
@@ -185,27 +176,24 @@ const initReasonButton = () => {
     vm.reasonInfo.placeholder = '未登录';
     vm.reasonInfo.buttonType = 'primary';
 }
-
 const consult = dest => {
     vm.station.consultation(dest, {
         type: 'consultation'
-    }).then(function (e) {
+    }).then(e => {
         console.info('磋商');
     }).catch(e => {
         this.$message.error(e.message)
     });
 }
-
 const singleStepTransfer = dest => {
-    vm.station.singleStepTransfer(dest).then(function (e) {
+    vm.station.singleStepTransfer(dest).then(e => {
         console.info('单转');
     }).catch(e => {
         this.$message.error(e.message)
     });
 }
-
 const singleStepConference = dest => {
-    vm.station.singleStepConference(dest).then(function (e) {
+    vm.station.singleStepConference(dest).then(e => {
         console.info('单步会议');
     }).catch(e => {
         this.$message.error(e.message)

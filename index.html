@@ -33,15 +33,15 @@
         <el-button id="makeCall_btn" type="success" @click="makeCall" v-if="buttonInfo.makeCall_btn">外呼</el-button>
         <el-button id="hangup_btn" type="success" @click="hangUp" v-if="buttonInfo.hangup_btn">挂断</el-button>
         <el-button id="answer_btn" type="success" @click="answer" v-if="buttonInfo.answer_btn">接听</el-button>
-        <el-button id="consult_btn" type="success" v-if="buttonInfo.consult_btn">咨询</el-button>
+        <el-button id="consult_btn" type="success" @click="consultBTN" v-if="buttonInfo.consult_btn">咨询</el-button>
         <el-button id="hold_btn" type="success" @click="hold" v-if="buttonInfo.hold_btn">保持</el-button>
         <el-button id="retrieve_btn" type="success" @click="retrieve" v-if="buttonInfo.retrieve_btn">取回</el-button>
-        <el-button id="ssc_btn" type="success" v-if="buttonInfo.ssc_btn">会议</el-button>
+        <el-button id="ssc_btn" type="success" @click="ssc" v-if="buttonInfo.ssc_btn">会议</el-button>
         <el-button id="sst_btn" type="success" @click="sst" v-if="buttonInfo.sst_btn">转移</el-button>
-        <el-button id="alternate_btn" type="success" v-if="buttonInfo.alternate_btn">切换</el-button>
-        <el-button id="transfer_btn" type="success" v-if="buttonInfo.transfer_btn">转移</el-button>
-        <el-button id="reconnect_btn" type="success" v-if="buttonInfo.reconnect_btn">重连</el-button>
-        <el-button id="conference_btn" type="success" v-if="buttonInfo.conference_btn">会议</el-button>
+        <el-button id="alternate_btn" type="success" @click="alternate" v-if="buttonInfo.alternate_btn">切换</el-button>
+        <el-button id="transfer_btn" type="success" @click="transfer" v-if="buttonInfo.transfer_btn">转移</el-button>
+        <el-button id="reconnect_btn" type="success" @click="reconnect" v-if="buttonInfo.reconnect_btn">重连</el-button>
+        <el-button id="conference_btn" type="success" @click="conference" v-if="buttonInfo.conference_btn">会议</el-button>
         <el-button id="sendDTMF_btn" type="success" @click="sendDTMF" v-if="buttonInfo.sendDTMF_btn">发送DTMF</el-button>
         <el-button id="validatePwd_btn" type="success" v-if="buttonInfo.validatePwd_btn">验密</el-button>
         <div>{{`${ isLogin ? station?.stationId : '坐席号' } : ${ isLogin ? station?.domain : '域名' }`}}</div>
@@ -89,7 +89,7 @@
         </span>
     </el-dialog>
 
-    <!-- 转移通话弹框 -->
+    <!-- 咨询、转移 弹框 -->
     <el-dialog
             title="请输入号码"
             :visible.sync="transferDialogVisible"
@@ -103,7 +103,28 @@
         </el-form>
         <span slot="footer" class="dialog-footer">
             <el-button @click="cancelTransfer">取 消</el-button>
-            <el-button type="primary" @click="transfer">转 移 </el-button>
+            <el-button type="primary" @click="successTransfer">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 验密 弹框 -->
+    <el-dialog
+            title="坐席验密"
+            :visible.sync="validatePwdDialogVisible"
+            width="550px"
+            :before-close="cancelValidatePwd"
+    >
+        <el-form :model="validatePwdForm" ref="validatePwdForm" label-width="150px" :rules="validatePwdFormRules">
+            <el-form-item label="验密ivr号码" prop="ivrNumber">
+                <el-input v-model="validatePwdForm.ivrNumber" class="inputContent"></el-input>
+            </el-form-item>
+            <el-form-item label="座席路由号码" prop="waitRoutePoint">
+                <el-input v-model="validatePwdForm.waitRoutePoint" class="inputContent"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="cancelValidatePwd">取 消</el-button>
+            <el-button type="primary" @click="successValidatePwd">确 定</el-button>
         </span>
     </el-dialog>
 </div>

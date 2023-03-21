@@ -36,6 +36,7 @@ const vm = new Vue({
             queueInfo: [],
             loginDialogVisible: false,
             transferDialogVisible: false,
+            validatePwdDialogVisible: false,
             loginForm: {
                 domain: 'laihucc',
                 agentId: '6003',
@@ -64,6 +65,18 @@ const vm = new Vue({
                     {required: true, message: "转移号码不能为空！", trigger: "blur"}
                 ],
             },
+            validatePwdForm: {
+                ivrNumber: null,
+                waitRoutePoint: null
+            },
+            validatePwdFormRules: {
+                ivrNumber: [
+                    {required: true, message: "验密ivr号码不能为空！", trigger: "blur"}
+                ],
+                waitRoutePoint: [
+                    {required: true, message: "座席路由号码不能为空！", trigger: "blur"}
+                ],
+            },
             // session对象
             session: null,
             // 分机对象
@@ -76,8 +89,7 @@ const vm = new Vue({
         this.session = new Session();
         this.station = this.session.station;
         this.event = this.session.event;
-        let event = this.session.event;
-        eventInit(event);
+        eventInit(this.event);
     },
     methods: {
         showLogin() {
@@ -183,9 +195,19 @@ const vm = new Vue({
                 this.$message.error(e.message)
             });
         },
+        // 咨询
+        consultBTN() {
+            op_type = 1;
+            this.transferDialogVisible = true;
+        },
         // 转移
         sst() {
             op_type = 2;
+            this.transferDialogVisible = true;
+        },
+        // 会议
+        ssc() {
+            op_type = 3;
             this.transferDialogVisible = true;
         },
         // 取消转移
@@ -193,7 +215,7 @@ const vm = new Vue({
             this.transferDialogVisible = false;
         },
         // 确认转移
-        transfer() {
+        successTransfer() {
             if (op_type === 1) {
                 consult(this.transferForm.transferNum);
             } else if (op_type === 2) {
@@ -217,6 +239,62 @@ const vm = new Vue({
                     });
                 }
             }
-        }
+        },
+        // 切换
+        alternate() {
+            this.station.alternate().then(e => {
+                console.info('切换');
+            }).catch(e => {
+                this.$message.error(e.message)
+            });
+        },
+        // 转移2？
+        transfer() {
+            this.station.transfer({
+                type: 'consultation',
+            }).then(e => {
+                console.info('转移');
+            }).catch(e => {
+                this.$message.error(e.message)
+            });
+        },
+        // 重连
+        reconnect() {
+            this.station.reconnect().then(function () {
+                console.info('重连');
+            }).catch(e => {
+                this.$message.error(e.message)
+            });
+        },
+        // 会议
+        conference() {
+            this.station.conference({
+                type: 'consultation',
+            }).then(function (e) {
+                console.info('会议');
+            }).catch(e => {
+                this.$message.error(e.message)
+            });
+        },
+        validatePwd() {
+            this.validatePwdDialogVisible = true;
+        },
+        // 取消验密
+        cancelValidatePwd() {
+            this.validatePwdDialogVisible = false;
+        },
+        // 确定验密
+        successValidatePwd() {
+            this.$refs['loginForm'].validate((valid) => {
+                if (valid){
+                    this.station.validatePwd(this.validatePwdForm.waitRoutePoint,this.validatePwdForm.ivrNumber, {}).then(function (e) {
+                        console.info('done');
+                    }).catch(e => {
+                        this.$message.error(e.message)
+                    });
+                }
+            })
+
+        },
     }
 })

@@ -47,3 +47,8 @@ const AgentStateType = {
     WORK_NOT_READY: "WorkNotReady",
     WORK_READY: "WorkReady"
 }
+
+// 会议标识
+let conferenceTag = false;
+// 操作标识
+let op_type;

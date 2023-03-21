@@ -1,6 +1,7 @@
 const settings = {
     // 连接地址
     connector: "172.20.219.133:8013",
+    // connector: "172.20.232.183:8006",
     // 超时时间
     timeout: 6e3,
     // 心跳间隔

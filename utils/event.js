@@ -44,20 +44,15 @@ const eventInit = function (event) {
      * 监听离席事件
      */
     event.on("AgentNotReadyEvt", function (e) {
-        $('#readybtn').removeClass("invisable");
-        $('#agent-state-btn').removeClass("btn-success");
-        $('#agent-state-btn').addClass("btn-warning");
-        $('#agentstate').html(lastReasonCodeName);
+        vm.reasonInfo.buttonType = 'warning';
     });
 
     /**
      * 监听后处理事件
      */
     event.on("AgentWorkingAfterCallEvt", function (e) {
-        $('#readybtn').removeClass("invisable");
-        $('#agent-state-btn').removeClass("btn-success");
-        $('#agent-state-btn').addClass("btn-warning");
-        $('#agentstate').html("话后处理");
+        vm.reasonInfo.buttonType = 'warning';
+        vm.reasonInfo.label = '话后处理';
     });
 
     /**
@@ -136,10 +131,10 @@ const eventInit = function (event) {
      * 监听 验密事件
      */
     event.on("ValidatePwdEvt", function (e) {
-        if (station.validate === 'access') {
-            MessageBox('验密结果 : 密码正确');
+        if (vm.station.validate === 'access') {
+            vm.$message.success('验密结果 : 密码正确')
         } else {
-            MessageBox('验密结果 : 密码错误');
+            vm.$message.error('验密结果 : 密码正确')
         }
     })
 
@@ -169,8 +164,8 @@ const eventInit = function (event) {
      */
     event.on("ConferencedEvt", function (e) {
         conferenceTag = true;
-        $('#agentstate').html("会议中");
-        $('#incalltime').html("");
+        vm.reasonInfo.label = '会议中';
+        vm.reasonInfo.duration = "";
     });
 
     /**
