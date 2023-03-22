@@ -33,9 +33,13 @@ const vm = new Vue({
                 duration: '--:--',
                 callNumber: ''
             },
+            // 队列信息
             queueInfo: [],
+            // 是否展示登录弹框
             loginDialogVisible: false,
+            // 是否展示咨询、转移弹框
             transferDialogVisible: false,
+            // 是否展示验密弹框
             validatePwdDialogVisible: false,
             loginForm: {
                 domain: 'laihucc',

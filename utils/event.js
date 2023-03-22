@@ -23,7 +23,7 @@ const eventInit = function (event) {
         vm.reasonInfo.options.push({label:'就绪',value:0})
         if (reasons instanceof Array){
             reasons.map(item => {
-                vm.reasonInfo.options.push({label:item.codename,value:item.code})
+                vm.reasonInfo.options.push({label:item.codeName,value:item.code})
             })
         }
         vm.isLogin = true

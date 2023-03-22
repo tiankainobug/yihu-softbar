@@ -11,9 +11,8 @@ class Event {
      * @param fn    回调函数
      * @param level 优先级（0最高，数值越大，级别越低）
      */
-    on(types, fn, level) {
+    on(types, fn, level=1) {
         let namespaces, namespace, type, origType;
-        if (level === window.undefined) level = 1;
         // 事件完整路径列表
         namespaces = types.toUpperCase().split(",");
         // 循环列表

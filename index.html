@@ -43,7 +43,7 @@
         <el-button id="reconnect_btn" type="success" @click="reconnect" v-if="buttonInfo.reconnect_btn">重连</el-button>
         <el-button id="conference_btn" type="success" @click="conference" v-if="buttonInfo.conference_btn">会议</el-button>
         <el-button id="sendDTMF_btn" type="success" @click="sendDTMF" v-if="buttonInfo.sendDTMF_btn">发送DTMF</el-button>
-        <el-button id="validatePwd_btn" type="success" v-if="buttonInfo.validatePwd_btn">验密</el-button>
+        <el-button id="validatePwd_btn" type="success" @click="validatePwd" v-if="buttonInfo.validatePwd_btn">验密</el-button>
         <div>{{`${ isLogin ? station?.stationId : '坐席号' } : ${ isLogin ? station?.domain : '域名' }`}}</div>
         <el-dropdown @command="signOut">
             <el-button type="primary">
